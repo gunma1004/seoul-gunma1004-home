@@ -162,7 +162,6 @@ def generate_page(title_area, page_path, breadcrumbs, related_links, current_cit
     page_title = f"{title_area} 출장 리프레시 마사지 · 출장 스페셜 테라피 | {SITE_NAME}"
     meta_desc = f"{title_area} 출장 리프레쉬 마사지 코스, 시간, 가격과 예약 준비를 확인하세요. 제휴업체 모던 민지룸 마사지의 아로마마사지 관리 범위와 상담 정보를 함께 안내합니다."
     
-    # 1. 완전한 Schema.org JSON-LD 객체 구성
     breadcrumb_list_elements = []
     for idx, bc in enumerate(breadcrumbs, 1):
         breadcrumb_list_elements.append({
@@ -200,13 +199,22 @@ def generate_page(title_area, page_path, breadcrumbs, related_links, current_cit
     }
     json_ld_string = json.dumps(structured_data, ensure_ascii=False, indent=2)
 
-    # 2. 상단 네비게이션 칩 링크 (실제 클릭 가능한 정적 URL)
     nav_chips = ""
     for link in related_links:
         is_active = ' is-active' if link.get("active") else ''
         nav_chips += f'<a class="area-chip{is_active}" href="{link["path"]}">{link["name"]}</a>'
 
     cards = render_cards_html(title_area, current_dong)
+
+    district_options = "".join([
+        f'<option value="/{current_city}/{urllib.parse.quote(d)}/" {"selected" if d==current_district else ""}>{d}</option>'
+        for d in REGION_DATA[current_city]["districts"].keys()
+    ])
+
+    dong_options = "".join([
+        f'<option value="/{current_city}/{urllib.parse.quote(current_district)}/{urllib.parse.quote(dong)}/" {"selected" if dong==current_dong else ""}>{dong}</option>'
+        for dong in REGION_DATA[current_city]["districts"].get(current_district, [])
+    ]) if current_district else ""
 
     return f"""<!doctype html>
 <html lang="ko">
@@ -220,14 +228,12 @@ def generate_page(title_area, page_path, breadcrumbs, related_links, current_cit
   <meta name="theme-color" content="#171b3c">
   <link rel="canonical" href="{full_url}">
 
-  <!-- Open Graph -->
   <meta property="og:title" content="{page_title}">
   <meta property="og:description" content="{meta_desc}">
   <meta property="og:url" content="{full_url}">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{SITE_NAME}">
 
-  <!-- JSON-LD -->
   <script type="application/ld+json">
 {json_ld_string}
   </script>
@@ -245,10 +251,8 @@ def generate_page(title_area, page_path, breadcrumbs, related_links, current_cit
     .brand-row {{ display: flex; align-items: center; justify-content: space-between; height: 68px; }}
     .brand {{ font-size: 1.25rem; font-weight: 850; display: inline-flex; align-items: center; gap: 8px; }}
     
-    /* 상단 선택 박스 UI */
     .filter-bar {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding-bottom: 14px; }}
-    .select-wrap {{ position: relative; }}
-    .select-wrap select {{ width: 100%; height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; font-size: .88rem; font-weight: 750; }}
+    .select-wrap select {{ width: 100%; height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; font-size: .88rem; font-weight: 750; cursor: pointer; }}
     
     main {{ padding: 24px 0 48px; }}
     .intro {{ padding: clamp(24px, 4vw, 42px); border-radius: var(--radius-lg); background: #17111f; color: #fff; text-align: center; border-top: 5px solid var(--primary); }}
@@ -291,22 +295,22 @@ def generate_page(title_area, page_path, breadcrumbs, related_links, current_cit
       </div>
       <div class="filter-bar">
         <div class="select-wrap">
-          <select onchange="if(this.value) location.href=this.value;">
+          <select onchange="if(this.value) window.location.href=this.value;">
             <option value="/seoul/" {'selected' if current_city=='seoul' else ''}>서울특별시</option>
             <option value="/gyeonggi/" {'selected' if current_city=='gyeonggi' else ''}>경기도</option>
             <option value="/incheon/" {'selected' if current_city=='incheon' else ''}>인천광역시</option>
           </select>
         </div>
         <div class="select-wrap">
-          <select onchange="if(this.value) location.href=this.value;">
+          <select onchange="if(this.value) window.location.href=this.value;">
             <option value="/{current_city}/">구/시 선택 전체</option>
-            {"".join([f'<option value="/{current_city}/{urllib.parse.quote(d)}/" {"selected" if d==current_district else ""}>{d}</option>' for d in REGION_DATA[current_city]["districts"].keys()])}
+            {district_options}
           </select>
         </div>
         <div class="select-wrap">
-          <select onchange="if(this.value) location.href=this.value;" {'disabled' if not current_district else ''}>
+          <select onchange="if(this.value) window.location.href=this.value;" {'disabled' if not current_district else ''}>
             <option value="/{current_city}/{urllib.parse.quote(current_district)}/">동 선택 전체</option>
-            {"".join([f'<option value="/{current_city}/{urllib.parse.quote(current_district)}/{urllib.parse.quote(dong)}/" {"selected" if dong==current_dong else ""}>{dong}</option>' for dong in REGION_DATA[current_city]["districts"].get(current_district, [])]) if current_district else ""}
+            {dong_options}
           </select>
         </div>
       </div>
@@ -320,7 +324,6 @@ def generate_page(title_area, page_path, breadcrumbs, related_links, current_cit
       <p class="intro-copy">{title_area} 전 지역에서 프라이빗하고 편안한 방문 안마 케어를 이용하세요.</p>
     </section>
 
-    <!-- 구 / 동 바로가기 네비게이션 칩 -->
     <nav class="nearby-row" aria-label="지역 바로가기">
       {nav_chips}
     </nav>
@@ -368,7 +371,7 @@ def main():
     sitemap_urls = [SITE_ORIGIN + "/"]
     os.makedirs("dist", exist_ok=True)
 
-    # 1. 메인 홈페이지 생성 (강남구, 서초구 등 주요 구로 바로 연결)
+    # 1. 메인 홈페이지 생성 (실제 존재하는 구/동 링크로 연결)
     home_links = [
         {"name": "강남구", "path": f"/seoul/{urllib.parse.quote('강남구')}/"},
         {"name": "서초구", "path": f"/seoul/{urllib.parse.quote('서초구')}/"},
@@ -384,20 +387,18 @@ def main():
         f.write(generate_page("수도권", "/", home_bc, home_links, current_city="seoul"))
     print("✓ 메인 페이지(dist/index.html) 생성 완료")
 
-    # 2. 시·도, 구, 동 실제 물리 폴더 및 index.html 생성
+    # 2. 시·도, 구, 동 폴더 및 각각의 index.html 물리 파일 생성
     for city_key, city_info in REGION_DATA.items():
         city_path = f"/{city_key}/"
         sitemap_urls.append(SITE_ORIGIN + city_path)
         city_dir = os.path.join("dist", city_key)
         os.makedirs(city_dir, exist_ok=True)
 
-        # 시/도 페이지 내 구 칩 링크
         dist_links = [{"name": d, "path": f"/{city_key}/{urllib.parse.quote(d)}/"} for d in list(city_info["districts"].keys())[:12]]
         city_bc = [{"name": "홈", "path": "/"}, {"name": city_info["short"], "path": city_path}]
         with open(os.path.join(city_dir, "index.html"), "w", encoding="utf-8") as f:
             f.write(generate_page(city_info["name"], city_path, city_bc, dist_links, current_city=city_key))
 
-        # 시/구/군 및 동 단위 페이지 생성
         for district_name, dongs in city_info["districts"].items():
             encoded_dist = urllib.parse.quote(district_name)
             dist_path = f"/{city_key}/{encoded_dist}/"
@@ -406,15 +407,14 @@ def main():
             dist_dir = os.path.join(city_dir, district_name)
             os.makedirs(dist_dir, exist_ok=True)
 
-            # 구 페이지에서는 해당 구 소속 동 링크들이 나열됨
             dong_links = [{"name": d, "path": f"/{city_key}/{encoded_dist}/{urllib.parse.quote(d)}/"} for d in dongs]
             dist_bc = city_bc + [{"name": district_name, "path": dist_path}]
 
-            # 구 index.html 생성
+            # 구 index.html
             with open(os.path.join(dist_dir, "index.html"), "w", encoding="utf-8") as f:
                 f.write(generate_page(f"{city_info['short']} {district_name}", dist_path, dist_bc, dong_links, current_city=city_key, current_district=district_name))
 
-            # 각 동 index.html 생성 (클릭 시 이동하는 실제 정적 파일)
+            # 동 index.html
             for dong_name in dongs:
                 encoded_dong = urllib.parse.quote(dong_name)
                 dong_path = f"/{city_key}/{encoded_dist}/{encoded_dong}/"
@@ -429,7 +429,6 @@ def main():
                     for d in dongs
                 ]
 
-                # 동 index.html 생성
                 with open(os.path.join(dong_dir, "index.html"), "w", encoding="utf-8") as f:
                     f.write(generate_page(
                         f"{city_info['short']} {district_name} {dong_name}",
@@ -450,17 +449,21 @@ def main():
         f.write(sitemap_content)
     print(f"✓ sitemap.xml 생성 완료 (총 {len(sitemap_urls)}개 URL)")
 
-    # 4. _redirects & robots.txt 생성
-    with open("dist/_redirects", "w", encoding="utf-8") as f:
-        f.write("/*    /index.html   200\n")
+    # 4. _redirects 파일 처리 (충돌 방지를 위해 기존 SPA rewrite 제거)
+    redirects_file = os.path.join("dist", "_redirects")
+    if os.path.exists(redirects_file):
+        os.remove(redirects_file)
+    print("✓ _redirects 충돌 규칙 제거 완료")
+
+    # 5. robots.txt 생성
     with open("dist/robots.txt", "w", encoding="utf-8") as f:
         f.write(f"User-agent: *\nAllow: /\nSitemap: {SITE_ORIGIN}/sitemap.xml\n")
-    print("✓ _redirects 및 robots.txt 생성 완료")
+    print("✓ robots.txt 생성 완료")
 
-    # 5. assets 자동 복사
+    # 6. assets 자동 복사
     if os.path.exists("assets"):
         shutil.copytree("assets", "dist/assets", dirs_exist_ok=True)
-        print("✓ assets 폴더 dist/assets로 복사 완료")
+        print("✓ assets 폴더 복사 완료")
 
 if __name__ == "__main__":
     main()

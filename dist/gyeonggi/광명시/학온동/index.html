@@ -10,14 +10,12 @@
   <meta name="theme-color" content="#171b3c">
   <link rel="canonical" href="https://seoul-gunma1004-home.netlify.app/gyeonggi/%EA%B4%91%EB%AA%85%EC%8B%9C/%ED%95%99%EC%98%A8%EB%8F%99/">
 
-  <!-- Open Graph -->
   <meta property="og:title" content="경기 광명시 학온동 출장 리프레시 마사지 · 출장 스페셜 테라피 | 건마1004">
   <meta property="og:description" content="경기 광명시 학온동 출장 리프레쉬 마사지 코스, 시간, 가격과 예약 준비를 확인하세요. 제휴업체 모던 민지룸 마사지의 아로마마사지 관리 범위와 상담 정보를 함께 안내합니다.">
   <meta property="og:url" content="https://seoul-gunma1004-home.netlify.app/gyeonggi/%EA%B4%91%EB%AA%85%EC%8B%9C/%ED%95%99%EC%98%A8%EB%8F%99/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="건마1004">
 
-  <!-- JSON-LD -->
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -85,10 +83,8 @@
     .brand-row { display: flex; align-items: center; justify-content: space-between; height: 68px; }
     .brand { font-size: 1.25rem; font-weight: 850; display: inline-flex; align-items: center; gap: 8px; }
     
-    /* 상단 선택 박스 UI */
     .filter-bar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding-bottom: 14px; }
-    .select-wrap { position: relative; }
-    .select-wrap select { width: 100%; height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; font-size: .88rem; font-weight: 750; }
+    .select-wrap select { width: 100%; height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; font-size: .88rem; font-weight: 750; cursor: pointer; }
     
     main { padding: 24px 0 48px; }
     .intro { padding: clamp(24px, 4vw, 42px); border-radius: var(--radius-lg); background: #17111f; color: #fff; text-align: center; border-top: 5px solid var(--primary); }
@@ -131,20 +127,20 @@
       </div>
       <div class="filter-bar">
         <div class="select-wrap">
-          <select onchange="if(this.value) location.href=this.value;">
+          <select onchange="if(this.value) window.location.href=this.value;">
             <option value="/seoul/" >서울특별시</option>
             <option value="/gyeonggi/" selected>경기도</option>
             <option value="/incheon/" >인천광역시</option>
           </select>
         </div>
         <div class="select-wrap">
-          <select onchange="if(this.value) location.href=this.value;">
+          <select onchange="if(this.value) window.location.href=this.value;">
             <option value="/gyeonggi/">구/시 선택 전체</option>
             <option value="/gyeonggi/%EC%88%98%EC%9B%90%EC%8B%9C%20%EC%9E%A5%EC%95%88%EA%B5%AC/" >수원시 장안구</option><option value="/gyeonggi/%EC%88%98%EC%9B%90%EC%8B%9C%20%EA%B6%8C%EC%84%A0%EA%B5%AC/" >수원시 권선구</option><option value="/gyeonggi/%EC%88%98%EC%9B%90%EC%8B%9C%20%ED%8C%94%EB%8B%AC%EA%B5%AC/" >수원시 팔달구</option><option value="/gyeonggi/%EC%88%98%EC%9B%90%EC%8B%9C%20%EC%98%81%ED%86%B5%EA%B5%AC/" >수원시 영통구</option><option value="/gyeonggi/%EC%84%B1%EB%82%A8%EC%8B%9C%20%EC%88%98%EC%A0%95%EA%B5%AC/" >성남시 수정구</option><option value="/gyeonggi/%EC%84%B1%EB%82%A8%EC%8B%9C%20%EC%A4%91%EC%9B%90%EA%B5%AC/" >성남시 중원구</option><option value="/gyeonggi/%EC%84%B1%EB%82%A8%EC%8B%9C%20%EB%B6%84%EB%8B%B9%EA%B5%AC/" >성남시 분당구</option><option value="/gyeonggi/%EA%B3%A0%EC%96%91%EC%8B%9C%20%EB%8D%95%EC%96%91%EA%B5%AC/" >고양시 덕양구</option><option value="/gyeonggi/%EA%B3%A0%EC%96%91%EC%8B%9C%20%EC%9D%BC%EC%82%B0%EB%8F%99%EA%B5%AC/" >고양시 일산동구</option><option value="/gyeonggi/%EA%B3%A0%EC%96%91%EC%8B%9C%20%EC%9D%BC%EC%82%B0%EC%84%9C%EA%B5%AC/" >고양시 일산서구</option><option value="/gyeonggi/%EC%9A%A9%EC%9D%B8%EC%8B%9C%20%EC%B2%98%EC%9D%B8%EA%B5%AC/" >용인시 처인구</option><option value="/gyeonggi/%EC%9A%A9%EC%9D%B8%EC%8B%9C%20%EA%B8%B0%ED%9D%A5%EA%B5%AC/" >용인시 기흥구</option><option value="/gyeonggi/%EC%9A%A9%EC%9D%B8%EC%8B%9C%20%EC%88%98%EC%A7%80%EA%B5%AC/" >용인시 수지구</option><option value="/gyeonggi/%EB%B6%80%EC%B2%9C%EC%8B%9C%20%EC%9B%90%EB%AF%B8%EA%B5%AC/" >부천시 원미구</option><option value="/gyeonggi/%EB%B6%80%EC%B2%9C%EC%8B%9C%20%EC%86%8C%EC%82%AC%EA%B5%AC/" >부천시 소사구</option><option value="/gyeonggi/%EB%B6%80%EC%B2%9C%EC%8B%9C%20%EC%98%A4%EC%A0%95%EA%B5%AC/" >부천시 오정구</option><option value="/gyeonggi/%EC%95%88%EC%96%91%EC%8B%9C%20%EB%A7%8C%EC%95%88%EA%B5%AC/" >안양시 만안구</option><option value="/gyeonggi/%EC%95%88%EC%96%91%EC%8B%9C%20%EB%8F%99%EC%95%88%EA%B5%AC/" >안양시 동안구</option><option value="/gyeonggi/%EC%95%88%EC%82%B0%EC%8B%9C%20%EC%83%81%EB%A1%9D%EA%B5%AC/" >안산시 상록구</option><option value="/gyeonggi/%EC%95%88%EC%82%B0%EC%8B%9C%20%EB%8B%A8%EC%9B%90%EA%B5%AC/" >안산시 단원구</option><option value="/gyeonggi/%ED%99%94%EC%84%B1%EC%8B%9C/" >화성시</option><option value="/gyeonggi/%ED%8F%89%ED%83%9D%EC%8B%9C/" >평택시</option><option value="/gyeonggi/%EC%8B%9C%ED%9D%A5%EC%8B%9C/" >시흥시</option><option value="/gyeonggi/%ED%8C%8C%EC%A3%BC%EC%8B%9C/" >파주시</option><option value="/gyeonggi/%EC%9D%98%EC%A0%95%EB%B6%80%EC%8B%9C/" >의정부시</option><option value="/gyeonggi/%EA%B9%80%ED%8F%AC%EC%8B%9C/" >김포시</option><option value="/gyeonggi/%EA%B4%91%EB%AA%85%EC%8B%9C/" selected>광명시</option><option value="/gyeonggi/%EA%B4%91%EC%A3%BC%EC%8B%9C/" >광주시</option><option value="/gyeonggi/%EA%B5%B0%ED%8F%AC%EC%8B%9C/" >군포시</option><option value="/gyeonggi/%ED%95%98%EB%82%A8%EC%8B%9C/" >하남시</option><option value="/gyeonggi/%EC%98%A4%EC%82%B0%EC%8B%9C/" >오산시</option><option value="/gyeonggi/%EC%96%91%EC%A3%BC%EC%8B%9C/" >양주시</option><option value="/gyeonggi/%EC%9D%B4%EC%B2%9C%EC%8B%9C/" >이천시</option><option value="/gyeonggi/%EA%B5%AC%EB%A6%AC%EC%8B%9C/" >구리시</option><option value="/gyeonggi/%EC%95%88%EC%84%B1%EC%8B%9C/" >안성시</option><option value="/gyeonggi/%ED%8F%AC%EC%B2%9C%EC%8B%9C/" >포천시</option><option value="/gyeonggi/%EC%9D%98%EC%99%95%EC%8B%9C/" >의왕시</option><option value="/gyeonggi/%EC%97%AC%EC%A3%BC%EC%8B%9C/" >여주시</option><option value="/gyeonggi/%EB%8F%99%EB%91%90%EC%B2%9C%EC%8B%9C/" >동두천시</option><option value="/gyeonggi/%EC%96%91%ED%8F%89%EA%B5%B0/" >양평군</option><option value="/gyeonggi/%EA%B3%BC%EC%B2%9C%EC%8B%9C/" >과천시</option><option value="/gyeonggi/%EA%B0%80%ED%8F%89%EA%B5%B0/" >가평군</option><option value="/gyeonggi/%EC%97%B0%EC%B2%9C%EA%B5%B0/" >연천군</option>
           </select>
         </div>
         <div class="select-wrap">
-          <select onchange="if(this.value) location.href=this.value;" >
+          <select onchange="if(this.value) window.location.href=this.value;" >
             <option value="/gyeonggi/%EA%B4%91%EB%AA%85%EC%8B%9C/">동 선택 전체</option>
             <option value="/gyeonggi/%EA%B4%91%EB%AA%85%EC%8B%9C/%EA%B4%91%EB%AA%85%EB%8F%99/" >광명동</option><option value="/gyeonggi/%EA%B4%91%EB%AA%85%EC%8B%9C/%EC%B2%A0%EC%82%B0%EB%8F%99/" >철산동</option><option value="/gyeonggi/%EA%B4%91%EB%AA%85%EC%8B%9C/%ED%95%98%EC%95%88%EB%8F%99/" >하안동</option><option value="/gyeonggi/%EA%B4%91%EB%AA%85%EC%8B%9C/%EC%86%8C%ED%95%98%EB%8F%99/" >소하동</option><option value="/gyeonggi/%EA%B4%91%EB%AA%85%EC%8B%9C/%EC%9D%BC%EC%A7%81%EB%8F%99/" >일직동</option><option value="/gyeonggi/%EA%B4%91%EB%AA%85%EC%8B%9C/%ED%95%99%EC%98%A8%EB%8F%99/" selected>학온동</option>
           </select>
@@ -160,7 +156,6 @@
       <p class="intro-copy">경기 광명시 학온동 전 지역에서 프라이빗하고 편안한 방문 안마 케어를 이용하세요.</p>
     </section>
 
-    <!-- 구 / 동 바로가기 네비게이션 칩 -->
     <nav class="nearby-row" aria-label="지역 바로가기">
       <a class="area-chip" href="/gyeonggi/%EA%B4%91%EB%AA%85%EC%8B%9C/%EA%B4%91%EB%AA%85%EB%8F%99/">광명동</a><a class="area-chip" href="/gyeonggi/%EA%B4%91%EB%AA%85%EC%8B%9C/%EC%B2%A0%EC%82%B0%EB%8F%99/">철산동</a><a class="area-chip" href="/gyeonggi/%EA%B4%91%EB%AA%85%EC%8B%9C/%ED%95%98%EC%95%88%EB%8F%99/">하안동</a><a class="area-chip" href="/gyeonggi/%EA%B4%91%EB%AA%85%EC%8B%9C/%EC%86%8C%ED%95%98%EB%8F%99/">소하동</a><a class="area-chip" href="/gyeonggi/%EA%B4%91%EB%AA%85%EC%8B%9C/%EC%9D%BC%EC%A7%81%EB%8F%99/">일직동</a><a class="area-chip is-active" href="/gyeonggi/%EA%B4%91%EB%AA%85%EC%8B%9C/%ED%95%99%EC%98%A8%EB%8F%99/">학온동</a>
     </nav>
