@@ -224,6 +224,7 @@ def generate_page(title_area, page_path, breadcrumbs, related_links, current_cit
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="naver-site-verification" content="b45fd4fec84d1a112ec206a4785187fdaf87a4c3">
   <title>{page_title}</title>
   <meta name="description" content="{meta_desc}">
   <meta name="keywords" content="{title_area} 출장마사지, {title_area} 리프레시 마사지, {title_area} 스페셜 테라피, {SITE_NAME}">
