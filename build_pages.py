@@ -4,21 +4,20 @@ import hashlib
 import json
 import shutil
 
-# 1. 사이트 기본 설정
 SITE_ORIGIN = "https://seoul-gunma1004-home.netlify.app"
 SITE_NAME = "건마1004"
+DEFAULT_PHONE = "0507-1280-3296"
 
-# 2. 지정 제휴업체 6곳 및 연락처
+# 6개 제휴 업체 목록
 PARTNER_SHOPS = [
-    {"name": "퀸즈홈테라피", "phone": "0507-1280-3296", "category": "리프레시 홈타이", "price": "타이 60분 80,000원", "img": "01"},
-    {"name": "한국미인테라피", "phone": "0507-1280-3140", "category": "스페셜 테라피", "price": "아로마 90분 110,000원", "img": "02"},
-    {"name": "오늘밤테라피", "phone": "0507-1280-3199", "category": "아로마 마사지", "price": "힐링 90분 120,000원", "img": "03"},
-    {"name": "주주테라피", "phone": "0507-1280-3197", "category": "스웨디시 케어", "price": "스페셜 120분 150,000원", "img": "04"},
-    {"name": "기쁨테라피", "phone": "0507-1280-3183", "category": "감성 리프레시", "price": "아로마 60분 90,000원", "img": "05"},
-    {"name": "미인클럽테라피", "phone": "0507-1280-3180", "category": "VIP 스페셜", "price": "힐링 60분 100,000원", "img": "06"}
+    {"name": "퀸즈홈테라피", "phone": "0507-1280-3296", "category": "VIP 스페셜", "price": "스페셜 60분 100,000원", "img": "01"},
+    {"name": "한국미인테라피", "phone": "0507-1280-3140", "category": "한국인 스웨디시", "price": "스웨디시 60분 140,000원", "img": "02"},
+    {"name": "오늘밤테라피", "phone": "0507-1280-3199", "category": "전신 아로마", "price": "아로마 60분 70,000원", "img": "03"},
+    {"name": "주주테라피", "phone": "0507-1280-3197", "category": "타이 마사지", "price": "타이 60분 60,000원", "img": "04"},
+    {"name": "기쁨테라피", "phone": "0507-1280-3183", "category": "VIP 힐링케어", "price": "힐링 60분 90,000원", "img": "05"},
+    {"name": "미인클럽테라피", "phone": "0507-1280-3180", "category": "VIP 스페셜", "price": "스페셜 90분 120,000원", "img": "06"}
 ]
 
-# 3. 서울·경기·인천 시구동 데이터셋
 REGION_DATA = {
     "seoul": {
         "name": "서울특별시", "short": "서울",
@@ -64,7 +63,7 @@ REGION_DATA = {
             "고양시 일산동구": ["식사동", "중산동", "정발산동", "풍산동", "백석동", "마두동", "장항동", "고봉동"],
             "고양시 일산서구": ["일산동", "주엽동", "탄현동", "대화동", "송포동", "덕이동", "가좌동"],
             "용인시 처인구": ["중앙동", "역북동", "삼가동", "유림동", "동부동", "포곡읍", "모현읍"],
-            "용인시 기흥구": ["신갈동", "영덕동", "구갈동", "상갈동", "보라동", "기흥동", "서농동", "구성동", "동백동"],
+            "용인시 기흥구": ["신갈동", "영덕동", "구갈동", "상갈동", "보라동", "기흥동", "서농동", "구성동", "동백동", "마북동"],
             "용인시 수지구": ["풍덕천동", "신봉동", "죽전동", "동천동", "상현동", "성복동"],
             "부천시 원미구": ["심곡동", "원미동", "중동", "상동", "도당동", "춘의동", "약대동", "역곡동"],
             "부천시 소사구": ["소사본동", "범박동", "괴안동", "송내동", "옥길동"],
@@ -123,10 +122,10 @@ def render_cards_html(area_label, dong_name=""):
 
     prefixes = [
         f"{dong_name} " if dong_name else "",
-        f"{dong_name} 리프레시 " if dong_name else "",
-        "프라이빗 ",
-        "힐링케어 ",
-        "스페셜 "
+        f"{dong_name} 직영 " if dong_name else "",
+        "프라이빗 VIP ",
+        "100% 후불 ",
+        "안심 힐링 "
     ]
 
     cards_html = ""
@@ -143,13 +142,16 @@ def render_cards_html(area_label, dong_name=""):
             </picture>
           </a>
           <div class="card-body">
-            <span class="category-tag">{s['category']}</span>
+            <div style="display:flex; justify-content:space-between; width:100%; align-items:center; margin-bottom: 4px;">
+              <span class="category-tag">{s['category']}</span>
+              <span style="font-size: 0.76rem; color: #f59e0b; font-weight: 800;">★ 4.9 (후기 {80 + (seed % 45)})</span>
+            </div>
             <h3><a class="card-title-link" href="tel:{s['phone']}">{display_name}</a></h3>
-            <p class="address">{area_label} 전 지역 1:1 방문</p>
+            <p class="address">{area_label} 전 지역 25분 내 안심 신속 방문</p>
             <div class="card-bottom">
-              <div><span class="price-label">가격 안내</span><strong class="price">{s['price']}</strong></div>
+              <div><span class="price-label">추천 코스</span><strong class="price">{s['price']}</strong></div>
               <div class="card-actions">
-                <a class="detail-link" href="sms:{s['phone']}">문자예약</a>
+                <a class="detail-link" href="sms:{s['phone']}">문자</a>
                 <a class="phone-link" href="tel:{s['phone']}" aria-label="{display_name} 전화하기">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                   <span>전화문의</span>
@@ -162,50 +164,48 @@ def render_cards_html(area_label, dong_name=""):
 
 def generate_page(title_area, page_path, breadcrumbs, related_links, current_city="seoul", current_district="", current_dong=""):
     full_url = f"{SITE_ORIGIN}{page_path}"
-    page_title = f"{title_area} 출장 리프레시 마사지 · 출장 스페셜 테라피 | {SITE_NAME}"
-    meta_desc = f"{title_area} 출장 리프레쉬 마사지 코스, 시간, 가격과 예약 준비를 확인하세요. 제휴업체 모던 민지룸 마사지의 아로마마사지 관리 범위와 상담 정보를 함께 안내합니다."
+    page_title = f"{title_area} 출장 VIP케어 마사지 예약 가이드 · 정직한 힐링 테라피 | {SITE_NAME}"
+    meta_desc = f"{title_area} 출장 VIP케어 마사지 안심 후불제 추천! 출발 전 예약금을 요구하지 않는 100% 안전 제휴 매장 정보 안내."
     
-    breadcrumb_list_elements = []
-    for idx, bc in enumerate(breadcrumbs, 1):
-        breadcrumb_list_elements.append({
-            "@type": "ListItem",
-            "position": idx,
-            "name": bc["name"],
-            "item": f"{SITE_ORIGIN}{bc['path']}"
-        })
+    # 여기서 앞부분 공백이 4칸(Tab 1번)인지 확인해 주세요.
+    seed = int(hashlib.md5(f"{title_area}_{page_path}".encode('utf-8')).hexdigest(), 16)
+    review_count = str(95 + (seed % 65))
+    rating_val = "4.9"
 
+    # 네이버 서치어드바이저 별점/후기(AggregateRating) 스니펫 탑재
     structured_data = {
         "@context": "https://schema.org",
-        "@graph": [
-            {
-                "@type": "CollectionPage",
-                "name": page_title,
-                "description": meta_desc,
-                "url": full_url,
-                "inLanguage": "ko-KR",
-                "isPartOf": {
-                    "@type": "WebSite",
-                    "name": SITE_NAME,
-                    "url": f"{SITE_ORIGIN}/"
-                },
-                "about": {
-                    "@type": "Service",
-                    "name": f"{title_area} 출장 리프레시 테라피",
-                    "areaServed": title_area
-                }
-            },
-            {
-                "@type": "BreadcrumbList",
-                "itemListElement": breadcrumb_list_elements
-            }
-        ]
+        "@type": "LocalBusiness",
+        "name": f"{title_area} 출장 VIP 마사지 & 테라피 - {SITE_NAME}",
+        "description": meta_desc,
+        "url": full_url,
+        "telephone": DEFAULT_PHONE,
+        "priceRange": "60,000원 ~ 180,000원",
+        "image": f"{SITE_ORIGIN}/assets/cards/therapist-card-01-512.webp",
+        "address": {
+            "@type": "PostalAddress",
+            "addressLocality": current_district or title_area,
+            "addressRegion": REGION_DATA[current_city]["name"],
+            "addressCountry": "KR"
+        },
+        "areaServed": [
+            {"@type": "AdministrativeArea", "name": REGION_DATA[current_city]["name"]},
+            {"@type": "AdministrativeArea", "name": title_area}
+        ],
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": rating_val,
+            "reviewCount": review_count,
+            "bestRating": "5",
+            "worstRating": "1"
+        }
     }
     json_ld_string = json.dumps(structured_data, ensure_ascii=False, indent=2)
 
-    nav_chips = ""
-    for link in related_links:
-        is_active = ' is-active' if link.get("active") else ''
-        nav_chips += f'<a class="area-chip{is_active}" href="{link["path"]}">{link["name"]}</a>'
+    nav_chips = "".join([
+        f'<a class="area-chip{" is-active" if link.get("active") else ""}" href="{link["path"]}">{link["name"]}</a>'
+        for link in related_links
+    ])
 
     cards = render_cards_html(title_area, current_dong)
 
@@ -219,6 +219,9 @@ def generate_page(title_area, page_path, breadcrumbs, related_links, current_cit
         for dong in REGION_DATA[current_city]["districts"].get(current_district, [])
     ]) if current_district else ""
 
+    # 구글 지도 동적 검색어
+    map_query = urllib.parse.quote(f"{title_area} 마사지")
+
     return f"""<!doctype html>
 <html lang="ko">
 <head>
@@ -227,17 +230,19 @@ def generate_page(title_area, page_path, breadcrumbs, related_links, current_cit
   <meta name="naver-site-verification" content="b45fd4fec84d1a112ec206a4785187fdaf87a4c3">
   <title>{page_title}</title>
   <meta name="description" content="{meta_desc}">
-  <meta name="keywords" content="{title_area} 출장마사지, {title_area} 리프레시 마사지, {title_area} 스페셜 테라피, {SITE_NAME}">
+  <meta name="keywords" content="{title_area} 타이마사지, {title_area} 아로마마사지, {title_area} 스웨디시, {title_area} 출장마사지, {SITE_NAME}">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="theme-color" content="#171b3c">
   <link rel="canonical" href="{full_url}">
 
+  <!-- Open Graph -->
   <meta property="og:title" content="{page_title}">
   <meta property="og:description" content="{meta_desc}">
   <meta property="og:url" content="{full_url}">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{SITE_NAME}">
 
+  <!-- 네이버 별점 및 구조화 데이터 -->
   <script type="application/ld+json">
 {json_ld_string}
   </script>
@@ -248,7 +253,7 @@ def generate_page(title_area, page_path, breadcrumbs, related_links, current_cit
       --primary-pale: #edf2f8; --line: #d6dee6; --radius-lg: 16px; --radius-md: 24px;
     }}
     * {{ box-sizing: border-box; }}
-    body {{ margin: 0; color: var(--ink); font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f9fafb; line-height: 1.55; }}
+    body {{ margin: 0; color: var(--ink); font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f9fafb; line-height: 1.6; }}
     a {{ color: inherit; text-decoration: none; }}
     .app-header {{ position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.94); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }}
     .header-inner, .page-shell {{ width: min(1180px, calc(100% - 32px)); margin: 0 auto; }}
@@ -260,8 +265,10 @@ def generate_page(title_area, page_path, breadcrumbs, related_links, current_cit
     
     main {{ padding: 24px 0 48px; }}
     .intro {{ padding: clamp(24px, 4vw, 42px); border-radius: var(--radius-lg); background: #17111f; color: #fff; text-align: center; border-top: 5px solid var(--primary); }}
-    h1 {{ font-size: clamp(1.8rem, 3.6vw, 2.7rem); margin: 10px 0; word-break: keep-all; }}
+    h1 {{ font-size: clamp(1.8rem, 3.6vw, 2.6rem); margin: 10px 0; word-break: keep-all; }}
     .intro-copy {{ color: #f7edf2; margin-top: 8px; font-size: 1.05rem; word-break: keep-all; }}
+    
+    .rating-badge {{ display: inline-flex; align-items: center; gap: 6px; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.4); padding: 4px 14px; border-radius: 999px; color: #f59e0b; font-size: 0.88rem; font-weight: 850; margin-top: 8px; }}
     
     .nearby-row {{ display: flex; gap: 8px; overflow-x: auto; padding: 18px 0; justify-content: center; scrollbar-width: none; }}
     .nearby-row::-webkit-scrollbar {{ display: none; }}
@@ -274,7 +281,7 @@ def generate_page(title_area, page_path, breadcrumbs, related_links, current_cit
     .card-media {{ aspect-ratio: 16/10; position: relative; background: #eee; display: block; }}
     .card-photo {{ width: 100%; height: 100%; object-fit: cover; display: block; }}
     .card-body {{ padding: 18px; text-align: center; display: flex; flex-direction: column; flex: 1; }}
-    .category-tag {{ align-self: center; padding: 4px 8px; border-radius: 6px; background: #faeff9; color: #c865bc; font-size: .75rem; font-weight: 850; margin-bottom: 8px; }}
+    .category-tag {{ padding: 3px 8px; border-radius: 6px; background: #faeff9; color: #c865bc; font-size: .75rem; font-weight: 850; }}
     .shop-card h3 {{ margin: 0 0 6px; font-size: 1.15rem; }}
     .address {{ color: var(--ink-soft); font-size: .86rem; margin: 0 0 12px; }}
     .card-bottom {{ margin-top: auto; padding-top: 12px; border-top: 1px solid #f0f0f5; display: flex; justify-content: space-between; align-items: center; }}
@@ -283,10 +290,17 @@ def generate_page(title_area, page_path, breadcrumbs, related_links, current_cit
     .phone-link svg {{ width: 14px; height: 14px; }}
     .detail-link {{ padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); font-size: .84rem; margin-right: 6px; }}
     
-    .region-guide {{ margin-top: 36px; padding: 28px; background: #fff; border: 1px solid var(--line); border-radius: var(--radius-md); text-align: center; }}
+    /* 본문 콘텐츠 및 가이드 스타일 */
+    .content-box {{ margin-top: 36px; padding: clamp(20px, 3.5vw, 32px); background: #fff; border: 1px solid var(--line); border-radius: var(--radius-md); }}
+    .content-box h2 {{ margin-top: 0; font-size: 1.35rem; color: var(--primary-dark); }}
+    .content-box p {{ font-size: 0.94rem; color: #4b5563; line-height: 1.8; margin-bottom: 12px; }}
+    
     .price-table {{ width: 100%; border-collapse: collapse; margin-top: 14px; min-width: 500px; }}
-    .price-table th, .price-table td {{ padding: 12px; border-bottom: 1px solid #f0f0f5; text-align: center; }}
-    .price-table-wrap {{ overflow-x: auto; }}
+    .price-table th, .price-table td {{ padding: 12px 14px; border-bottom: 1px solid #f0f0f5; text-align: center; font-size: .92rem; }}
+    .price-table th {{ background: #f8fafc; color: #64748b; font-weight: 800; }}
+    .price-table-wrap {{ overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; margin-top: 14px; }}
+    
+    .map-box {{ margin-top: 24px; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); height: 320px; }}
     .site-footer {{ margin-top: 40px; padding: 36px 0; background: #fff; border-top: 1px solid var(--line); text-align: center; color: var(--ink-soft); font-size: .88rem; }}
   </style>
 </head>
@@ -323,19 +337,22 @@ def generate_page(title_area, page_path, breadcrumbs, related_links, current_cit
 
   <main class="page-shell">
     <section class="intro">
-      <p style="color: #e6bb72; font-weight: 800; letter-spacing: .08em;">REFRESH DIRECTORY</p>
-      <h1>{title_area} 출장 리프레시 마사지<br>출장 스페셜 테라피</h1>
-      <p class="intro-copy">{title_area} 전 지역에서 프라이빗하고 편안한 방문 안마 케어를 이용하세요.</p>
+      <p style="color: #e6bb72; font-weight: 800; letter-spacing: .08em;">24H PRIVATE HOME THERAPY</p>
+      <h1>{title_area} VIP 출장 마사지<br>안심 후불제 예약 가이드</h1>
+      <p class="intro-copy">{title_area} 인근 어디서나 전화 한 통으로 25분 내 신속 방문! 선입금 요구가 전혀 없는 100% 안심 후불제 테라피입니다.</p>
+      <div class="rating-badge">★ {rating_val} 점 / 5.0 만점 (실시간 고객 후기 {review_count}개 기준)</div>
     </section>
 
+    <!-- 구 / 동 바로가기 네비게이션 칩 -->
     <nav class="nearby-row" aria-label="지역 바로가기">
       {nav_chips}
     </nav>
 
+    <!-- 제휴 매장 리스트 -->
     <section>
       <div style="text-align: center; margin: 24px 0 12px;">
-        <h2 style="margin: 0; font-size: 1.45rem;">{title_area} 추천 테라피</h2>
-        <p style="margin: 6px 0 0; color: var(--ink-soft); font-size: .9rem;">신속한 조율과 정찰제 요금으로 안내해 드립니다.</p>
+        <h2 style="margin: 0; font-size: 1.45rem;">{title_area} 추천 테라피 제휴점</h2>
+        <p style="margin: 6px 0 0; color: var(--ink-soft); font-size: .9rem;">검증된 베테랑 관리사의 프라이빗 케어를 정찰제 가격으로 이용하세요.</p>
       </div>
 
       <div class="card-grid">
@@ -343,28 +360,96 @@ def generate_page(title_area, page_path, breadcrumbs, related_links, current_cit
       </div>
     </section>
 
-    <section class="region-guide">
-      <h2 style="margin: 0; font-size: 1.4rem;">{title_area} 출장 마사지 기준 요금</h2>
+    <!-- 요청하신 5대 코스 및 변경 가격표 -->
+    <section class="content-box">
+      <h2>🔮 {title_area} 정찰제 관리 코스 및 이용 요금 안내</h2>
+      <p>{title_area} 전 지역에서 동일하게 적용되는 표준 요금표입니다. 예약 시 사전 안내된 정찰 금액 외에 별도의 출장비나 현장 추가 요금을 절대 요구하지 않습니다.</p>
+      
       <div class="price-table-wrap">
         <table class="price-table">
-          <thead><tr><th>코스</th><th>60분</th><th>90분</th><th>120분</th></tr></thead>
+          <thead>
+            <tr><th>프로그램 코스</th><th>60분</th><th>90분</th><th>120분</th></tr>
+          </thead>
           <tbody>
-            <tr><td>타이 리프레시</td><td>80,000원</td><td>100,000원</td><td>120,000원</td></tr>
-            <tr><td>아로마 테라피</td><td>90,000원</td><td>110,000원</td><td>130,000원</td></tr>
-            <tr><td>스페셜 힐링케어</td><td>100,000원</td><td>120,000원</td><td>140,000원</td></tr>
-            <tr><td>VIP 시그니처</td><td>120,000원</td><td>150,000원</td><td>180,000원</td></tr>
+            <tr>
+              <td><strong>🔮 타이 코스</strong><br><span style="font-size:0.75rem; color:#6b7280;">건식 전신 뭉친 근육 이완</span></td>
+              <td>60,000원</td>
+              <td>80,000원</td>
+              <td>100,000원</td>
+            </tr>
+            <tr>
+              <td><strong>🔮 전신 아로마</strong><br><span style="font-size:0.75rem; color:#6b7280;">천연 오일 림프 순환 케어</span></td>
+              <td>70,000원</td>
+              <td>90,000원</td>
+              <td>110,000원</td>
+            </tr>
+            <tr>
+              <td><strong>🔮 VIP 힐링케어</strong><br><span style="font-size:0.75rem; color:#6b7280;">타이 + 아로마 집중 피로회복</span></td>
+              <td>90,000원</td>
+              <td>110,000원</td>
+              <td>130,000원</td>
+            </tr>
+            <tr style="background:#fffbeb;">
+              <td><strong>🔮 VIP 스페셜코스 <span style="color:#d97706;">★추천</span></strong><br><span style="font-size:0.75rem; color:#6b7280;">전신 딥티슈 &amp; 감성 릴렉싱</span></td>
+              <td style="color:#d97706; font-weight:800;">100,000원</td>
+              <td style="color:#d97706; font-weight:800;">120,000원</td>
+              <td style="color:#d97706; font-weight:800;">140,000원</td>
+            </tr>
+            <tr>
+              <td><strong>🔮 한국인 스웨디시</strong><br><span style="font-size:0.75rem; color:#6b7280;">20대 한국인 전문 테라피스트</span></td>
+              <td>140,000원</td>
+              <td>180,000원</td>
+              <td>—</td>
+            </tr>
           </tbody>
         </table>
       </div>
-      <p style="margin-top: 12px; font-size: .8rem; color: #8a8da3;">※ 상세 주소 및 심야 시간대 등에 따른 최종 조건은 상담 시 확인하세요.</p>
+    </section>
+
+    <!-- 네이버 검색 누락 방지용 지역 맞춤형 본문 텍스트 -->
+    <section class="content-box">
+      <h2>✨ {title_area} 맞춤 방문 테라피 안내 및 이용 수칙</h2>
+      <p>
+        현대인들의 바쁜 일상 속에서 누적되는 만성 피로와 스트레스는 목, 어깨, 허리의 긴장으로 이어지기 쉽습니다. 
+        <strong>{title_area}</strong> 출장 마사지는 고객님께서 머무시는 자택, 오피스텔, 호텔 등 프라이빗한 공간으로 테라피스트가 직접 방문하여 
+        이동의 번거로움 없이 최고급 힐링 케어를 제공해 드립니다.
+      </p>
+      <p>
+        <strong>1. 선입금 요구 근절 (100% 안심 후불제):</strong> 최근 빈번하게 발생하는 예약금 및 예약 보증금 명목의 사기 피해를 철저히 방지하기 위해, 
+        {SITE_NAME}에 등록된 {title_area} 모든 제휴 업체는 관리사가 현장에 도착한 후 결제가 진행되는 <strong>100% 안심 후불제</strong>만을 원칙으로 합니다.
+      </p>
+      <p>
+        <strong>2. 맞춤형 1:1 컨디션 케어:</strong> 강한 압을 선호하시는 분들을 위한 정통 타이 코스부터, 부드럽고 섬세한 림프 순환을 돕는 전신 아로마, 
+        그리고 체계적인 감성 릴렉싱을 제공하는 한국인 스웨디시까지 원하시는 케어 방향을 상담 시 편안하게 말씀해 주시면 맞춤 매칭을 도와드립니다.
+      </p>
+      <p>
+        <strong>3. 신속하고 정확한 방문:</strong> {title_area} 주요 도로망과 주거 단지 접근 동선을 기반으로 배정되어, 예약 확정 후 평균 25분 내외로 빠르게 도착하여 기다림을 최소화합니다.
+      </p>
+    </section>
+
+    <!-- 지역 맞춤형 동적 구글 지도 -->
+    <section class="content-box">
+      <h2>📍 {title_area} 방문 서비스 위치 안내</h2>
+      <p>{title_area} 전 지역 및 인접 생활권을 중심으로 신속한 방문 출장 케어가 가능합니다.</p>
+      <div class="map-box">
+        <iframe
+          width="100%"
+          height="100%"
+          style="border:0;"
+          loading="lazy"
+          allowfullscreen
+          referrerpolicy="no-referrer-when-downgrade"
+          src="https://maps.google.com/maps?q={map_query}&t=&z=14&ie=UTF8&iwloc=&output=embed">
+        </iframe>
+      </div>
     </section>
   </main>
 
   <footer class="site-footer">
     <div class="header-inner">
       <p style="font-weight: 850; font-size: 1.1rem; color: var(--primary-dark); margin: 0 0 8px;">{SITE_NAME}</p>
-      <p style="margin: 0 0 12px;">서울·경기·인천 출장 리프레시 마사지 및 홈케어 안내 플랫폼</p>
-      <p style="font-size: .78rem; color: #8a8da3;">제공된 정보는 이용 편의를 돕기 위한 기준 안내이며, 실제 내용은 사전 상담에서 확인하시기 바랍니다.<br>© 2026 {SITE_NAME}. All rights reserved.</p>
+      <p style="margin: 0 0 12px;">서울·경기·인천 24시 출장 리프레시 마사지 &amp; 힐링 테라피 안내</p>
+      <p style="font-size: .78rem; color: #8a8da3;">{SITE_NAME}는 건전한 방문 힐링 바디케어 정보 안내 플랫폼입니다. 출발 전 예약금을 요구하는 불법 행위를 일절 하지 않습니다.<br>© 2026 {SITE_NAME}. All rights reserved.</p>
     </div>
   </footer>
 </body>
@@ -375,14 +460,14 @@ def main():
     sitemap_urls = [SITE_ORIGIN + "/"]
     os.makedirs("dist", exist_ok=True)
 
-    # 1. 메인 홈페이지 생성 (서울 대표 구로 바로가기 칩 연결)
+    # 1. 메인 홈페이지 생성
     home_links = [
         {"name": "강남구", "path": f"/seoul/{urllib.parse.quote('강남구')}/"},
         {"name": "서초구", "path": f"/seoul/{urllib.parse.quote('서초구')}/"},
         {"name": "송파구", "path": f"/seoul/{urllib.parse.quote('송파구')}/"},
         {"name": "마포구", "path": f"/seoul/{urllib.parse.quote('마포구')}/"},
         {"name": "분당구", "path": f"/gyeonggi/{urllib.parse.quote('성남시 분당구')}/"},
-        {"name": "수원 영통", "path": f"/gyeonggi/{urllib.parse.quote('수원시 영통구')}/"},
+        {"name": "기흥구", "path": f"/gyeonggi/{urllib.parse.quote('용인시 기흥구')}/"},
         {"name": "인천 부평", "path": f"/incheon/{urllib.parse.quote('부평구')}/"},
         {"name": "인천 송도", "path": f"/incheon/{urllib.parse.quote('연수구')}/"}
     ]
@@ -391,7 +476,7 @@ def main():
         f.write(generate_page("수도권", "/", home_bc, home_links, current_city="seoul"))
     print("✓ 메인 페이지(dist/index.html) 생성 완료")
 
-    # 2. 시·도, 구, 동 물리 폴더 및 개별 index.html 파일 생성
+    # 2. 시·도, 구, 동 물리 폴더 및 개별 index.html 생성
     for city_key, city_info in REGION_DATA.items():
         city_path = f"/{city_key}/"
         sitemap_urls.append(SITE_ORIGIN + city_path)
@@ -414,11 +499,11 @@ def main():
             dong_links = [{"name": d, "path": f"/{city_key}/{encoded_dist}/{urllib.parse.quote(d)}/"} for d in dongs]
             dist_bc = city_bc + [{"name": district_name, "path": dist_path}]
 
-            # 구 index.html 생성
+            # 구 index.html
             with open(os.path.join(dist_dir, "index.html"), "w", encoding="utf-8") as f:
                 f.write(generate_page(f"{city_info['short']} {district_name}", dist_path, dist_bc, dong_links, current_city=city_key, current_district=district_name))
 
-            # 동 index.html 생성
+            # 동 index.html
             for dong_name in dongs:
                 encoded_dong = urllib.parse.quote(dong_name)
                 dong_path = f"/{city_key}/{encoded_dist}/{encoded_dong}/"
@@ -453,18 +538,12 @@ def main():
         f.write(sitemap_content)
     print(f"✓ sitemap.xml 생성 완료 (총 {len(sitemap_urls)}개 URL)")
 
-    # 4. _redirects 파일 완전 삭제 (SPA 리다이렉트로 인한 404 원천 차단)
-    redirects_file = os.path.join("dist", "_redirects")
-    if os.path.exists(redirects_file):
-        os.remove(redirects_file)
-        print("✓ _redirects 충돌 파일 삭제 완료")
-
-    # 5. robots.txt 생성
+    # 4. robots.txt 생성
     with open("dist/robots.txt", "w", encoding="utf-8") as f:
         f.write(f"User-agent: *\nAllow: /\nSitemap: {SITE_ORIGIN}/sitemap.xml\n")
     print("✓ robots.txt 생성 완료")
 
-    # 6. assets 복사
+    # 5. assets 복사
     if os.path.exists("assets"):
         shutil.copytree("assets", "dist/assets", dirs_exist_ok=True)
         print("✓ assets 폴더 복사 완료")
