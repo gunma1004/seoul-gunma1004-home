@@ -1,11 +1,11 @@
 import os
 import urllib.parse
-import hashlib  # <--- 이 줄을 추가해 주세요!
+import hashlib
+import json
+import shutil
 
-# 1. 사이트 기본 설정
 SITE_ORIGIN = "https://seoul-gunma1004-home.netlify.app"
 SITE_NAME = "건마1004"
-DEFAULT_PHONE = "0507-1280-3199"
 
 PARTNER_SHOPS = [
     {"name": "퀸즈홈테라피", "phone": "0507-1280-3296", "category": "리프레시 홈타이", "price": "타이 60분 80,000원", "img": "01"},
@@ -16,7 +16,6 @@ PARTNER_SHOPS = [
     {"name": "미인클럽테라피", "phone": "0507-1280-3180", "category": "VIP 스페셜", "price": "힐링 60분 100,000원", "img": "06"}
 ]
 
-# 2. 서울, 경기, 인천 전체 시·구·동 데이터
 REGION_DATA = {
     "seoul": {
         "name": "서울특별시", "short": "서울",
@@ -114,47 +113,42 @@ REGION_DATA = {
 }
 
 def render_cards_html(area_label, dong_name=""):
-    # 동 이름 기반 고유 시드값 생성
     seed = int(hashlib.md5(f"{area_label}_{dong_name}".encode('utf-8')).hexdigest(), 16)
-    
-    # 1. 노출 순서 셔플 (동마다 첫 번째 업체가 바뀜)
     shuffled_shops = PARTNER_SHOPS[:]
     start_idx = seed % len(shuffled_shops)
     ordered_shops = shuffled_shops[start_idx:] + shuffled_shops[:start_idx]
 
-    # 2. 지역명 결합 수식어 패턴
     prefixes = [
-        f"{dong_name}점 ",
-        f"{dong_name} ",
-        f"{dong_name} 1호 ",
+        f"{dong_name} " if dong_name else "",
+        f"{dong_name} 리프레시 " if dong_name else "",
         "프라이빗 ",
-        "리프레시 "
+        "힐링케어 ",
+        "스페셜 "
     ]
 
     cards_html = ""
     for idx, s in enumerate(ordered_shops):
-        # 업체명에 동적 수식어 결합 (예: 신월동점 퀸즈홈테라피, 신월 퀸즈홈테라피)
-        prefix = prefixes[(seed + idx) % len(prefixes)] if dong_name else ""
+        prefix = prefixes[(seed + idx) % len(prefixes)]
         display_name = f"{prefix}{s['name']}".strip()
-        
         cards_html += f"""
         <article class="shop-card">
           <a class="card-media" href="tel:{s['phone']}" aria-label="{display_name} 전화 문의">
             <span class="media-fallback">{s['category']}</span>
             <picture class="card-picture">
               <source media="(max-width: 680px)" srcset="/assets/cards/therapist-card-{s['img']}-240.webp">
-              <img class="card-photo" src="/assets/cards/therapist-card-{s['img']}-512.webp" alt="{display_name} 대표 이미지" width="512" height="320" loading="lazy">
+              <img class="card-photo" src="/assets/cards/therapist-card-{s['img']}-512.webp" alt="{display_name} 테라피스트 대표 이미지" width="512" height="320" loading="lazy">
             </picture>
           </a>
           <div class="card-body">
             <span class="category-tag">{s['category']}</span>
             <h3><a class="card-title-link" href="tel:{s['phone']}">{display_name}</a></h3>
-            <p class="address">{area_label} 일대 방문 상담</p>
+            <p class="address">{area_label} 전 지역 1:1 방문</p>
             <div class="card-bottom">
-              <div><span class="price-label">예약 기준</span><strong class="price">{s['price']}</strong></div>
+              <div><span class="price-label">가격 안내</span><strong class="price">{s['price']}</strong></div>
               <div class="card-actions">
-                <a class="detail-link" href="sms:{s['phone']}">문자</a>
-                <a class="phone-link" href="tel:{s['phone']}">
+                <a class="detail-link" href="sms:{s['phone']}">문자예약</a>
+                <a class="phone-link" href="tel:{s['phone']}" aria-label="{display_name} 전화하기">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                   <span>전화문의</span>
                 </a>
               </div>
@@ -163,24 +157,56 @@ def render_cards_html(area_label, dong_name=""):
         </article>"""
     return cards_html
 
-def generate_page(title_area, page_path, breadcrumbs, related_links):
+def generate_page(title_area, page_path, breadcrumbs, related_links, current_city="seoul", current_district="", current_dong=""):
     full_url = f"{SITE_ORIGIN}{page_path}"
     page_title = f"{title_area} 출장 리프레시 마사지 · 출장 스페셜 테라피 | {SITE_NAME}"
     meta_desc = f"{title_area} 출장 리프레쉬 마사지 코스, 시간, 가격과 예약 준비를 확인하세요. 제휴업체 모던 민지룸 마사지의 아로마마사지 관리 범위와 상담 정보를 함께 안내합니다."
     
-    # 빵부스러기 JSON-LD
-    bc_elements = []
+    # 1. 완전한 Schema.org JSON-LD 객체 구성
+    breadcrumb_list_elements = []
     for idx, bc in enumerate(breadcrumbs, 1):
-        bc_elements.append(f'{{"@type":"ListItem","position":{idx},"name":"{bc["name"]}","item":"{SITE_ORIGIN}{bc["path"]}"}}')
-    bc_json = ",".join(bc_elements)
+        breadcrumb_list_elements.append({
+            "@type": "ListItem",
+            "position": idx,
+            "name": bc["name"],
+            "item": f"{SITE_ORIGIN}{bc['path']}"
+        })
 
-    # 상단 빠른 지역 칩
+    structured_data = {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "CollectionPage",
+                "name": page_title,
+                "description": meta_desc,
+                "url": full_url,
+                "inLanguage": "ko-KR",
+                "isPartOf": {
+                    "@type": "WebSite",
+                    "name": SITE_NAME,
+                    "url": f"{SITE_ORIGIN}/"
+                },
+                "about": {
+                    "@type": "Service",
+                    "name": f"{title_area} 출장 리프레시 테라피",
+                    "areaServed": title_area
+                }
+            },
+            {
+                "@type": "BreadcrumbList",
+                "itemListElement": breadcrumb_list_elements
+            }
+        ]
+    }
+    json_ld_string = json.dumps(structured_data, ensure_ascii=False, indent=2)
+
+    # 2. 상단 네비게이션 칩 링크 (실제 클릭 가능한 정적 URL)
     nav_chips = ""
-    for link in related_links[:9]:
+    for link in related_links:
         is_active = ' is-active' if link.get("active") else ''
         nav_chips += f'<a class="area-chip{is_active}" href="{link["path"]}">{link["name"]}</a>'
 
-    cards = render_cards_html(title_area)
+    cards = render_cards_html(title_area, current_dong)
 
     return f"""<!doctype html>
 <html lang="ko">
@@ -189,58 +215,55 @@ def generate_page(title_area, page_path, breadcrumbs, related_links):
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{page_title}</title>
   <meta name="description" content="{meta_desc}">
-  <meta name="keywords" content="{title_area} 출장마사지, {title_area} 리프레시마사지, {title_area} 스페셜테라피, {SITE_NAME}">
+  <meta name="keywords" content="{title_area} 출장마사지, {title_area} 리프레시 마사지, {title_area} 스페셜 테라피, {SITE_NAME}">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="theme-color" content="#171b3c">
   <link rel="canonical" href="{full_url}">
 
+  <!-- Open Graph -->
   <meta property="og:title" content="{page_title}">
   <meta property="og:description" content="{meta_desc}">
   <meta property="og:url" content="{full_url}">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{SITE_NAME}">
 
+  <!-- JSON-LD -->
   <script type="application/ld+json">
-  {{
-    "@context": "https://schema.org",
-    "@graph": [
-      {{
-        "@type": "CollectionPage",
-        "name": "{page_title}",
-        "description": "{meta_desc}",
-        "url": "{full_url}",
-        "inLanguage": "ko-KR",
-        "isPartOf": {{ "@type": "WebSite", "name": "{SITE_NAME}", "url": "{SITE_ORIGIN}/" }},
-        "about": {{ "@type": "Service", "name": "{title_area} 출장 리프레시 테라피", "areaServed": "{title_area}" }}
-      }},
-      {{
-        "@type": "BreadcrumbList",
-        "itemListElement": [{bc_json}]
-      }}
-    ]
-  }}
+{json_ld_string}
   </script>
-  <link rel="stylesheet" href="/assets/style.css">
+
   <style>
-    /* 인라인 fallback 스타일 */
-    :root {{ --ink: #1a232d; --ink-soft: #606d7b; --primary: #376ca4; --primary-dark: #2b4664; --primary-pale: #edf2f8; --line: #d6dee6; --radius-lg: 16px; --radius-md: 24px; }}
+    :root {{
+      --ink: #1a232d; --ink-soft: #606d7b; --primary: #376ca4; --primary-dark: #2b4664;
+      --primary-pale: #edf2f8; --line: #d6dee6; --radius-lg: 16px; --radius-md: 24px;
+    }}
     * {{ box-sizing: border-box; }}
-    body {{ margin: 0; color: var(--ink); font-family: Pretendard, -apple-system, sans-serif; background: #f9fafb; line-height: 1.5; }}
+    body {{ margin: 0; color: var(--ink); font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f9fafb; line-height: 1.55; }}
     a {{ color: inherit; text-decoration: none; }}
     .app-header {{ position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.94); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }}
     .header-inner, .page-shell {{ width: min(1180px, calc(100% - 32px)); margin: 0 auto; }}
     .brand-row {{ display: flex; align-items: center; justify-content: space-between; height: 68px; }}
     .brand {{ font-size: 1.25rem; font-weight: 850; display: inline-flex; align-items: center; gap: 8px; }}
+    
+    /* 상단 선택 박스 UI */
+    .filter-bar {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding-bottom: 14px; }}
+    .select-wrap {{ position: relative; }}
+    .select-wrap select {{ width: 100%; height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; font-size: .88rem; font-weight: 750; }}
+    
     main {{ padding: 24px 0 48px; }}
     .intro {{ padding: clamp(24px, 4vw, 42px); border-radius: var(--radius-lg); background: #17111f; color: #fff; text-align: center; border-top: 5px solid var(--primary); }}
     h1 {{ font-size: clamp(1.8rem, 3.6vw, 2.7rem); margin: 10px 0; word-break: keep-all; }}
-    .intro-copy {{ color: #f7edf2; margin-top: 8px; font-size: 1.05rem; }}
-    .nearby-row {{ display: flex; gap: 8px; overflow-x: auto; padding: 18px 0; justify-content: center; }}
-    .area-chip {{ padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; background: #fff; font-size: .88rem; font-weight: 750; flex: 0 0 auto; }}
+    .intro-copy {{ color: #f7edf2; margin-top: 8px; font-size: 1.05rem; word-break: keep-all; }}
+    
+    .nearby-row {{ display: flex; gap: 8px; overflow-x: auto; padding: 18px 0; justify-content: center; scrollbar-width: none; }}
+    .nearby-row::-webkit-scrollbar {{ display: none; }}
+    .area-chip {{ padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; background: #fff; font-size: .88rem; font-weight: 750; flex: 0 0 auto; transition: .18s; }}
+    .area-chip:hover {{ border-color: var(--primary); }}
     .area-chip.is-active {{ background: var(--primary-pale); border-color: var(--primary); color: var(--primary-dark); }}
+    
     .card-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 18px; margin-top: 20px; }}
     .shop-card {{ border: 1px solid var(--line); border-radius: var(--radius-md); background: #fff; overflow: hidden; display: flex; flex-direction: column; }}
-    .card-media {{ aspect-ratio: 16/10; position: relative; background: #eee; }}
+    .card-media {{ aspect-ratio: 16/10; position: relative; background: #eee; display: block; }}
     .card-photo {{ width: 100%; height: 100%; object-fit: cover; display: block; }}
     .card-body {{ padding: 18px; text-align: center; display: flex; flex-direction: column; flex: 1; }}
     .category-tag {{ align-self: center; padding: 4px 8px; border-radius: 6px; background: #faeff9; color: #c865bc; font-size: .75rem; font-weight: 850; margin-bottom: 8px; }}
@@ -248,11 +271,14 @@ def generate_page(title_area, page_path, breadcrumbs, related_links):
     .address {{ color: var(--ink-soft); font-size: .86rem; margin: 0 0 12px; }}
     .card-bottom {{ margin-top: auto; padding-top: 12px; border-top: 1px solid #f0f0f5; display: flex; justify-content: space-between; align-items: center; }}
     .price {{ font-weight: 900; font-size: .96rem; color: var(--primary-dark); }}
-    .phone-link {{ padding: 8px 14px; border-radius: 12px; background: var(--ink); color: #fff; font-size: .84rem; font-weight: 800; }}
+    .phone-link {{ padding: 8px 14px; border-radius: 12px; background: var(--ink); color: #fff; font-size: .84rem; font-weight: 800; display: inline-flex; align-items: center; gap: 5px; }}
+    .phone-link svg {{ width: 14px; height: 14px; }}
     .detail-link {{ padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); font-size: .84rem; margin-right: 6px; }}
+    
     .region-guide {{ margin-top: 36px; padding: 28px; background: #fff; border: 1px solid var(--line); border-radius: var(--radius-md); text-align: center; }}
-    .price-table {{ width: 100%; border-collapse: collapse; margin-top: 14px; }}
+    .price-table {{ width: 100%; border-collapse: collapse; margin-top: 14px; min-width: 500px; }}
     .price-table th, .price-table td {{ padding: 12px; border-bottom: 1px solid #f0f0f5; text-align: center; }}
+    .price-table-wrap {{ overflow-x: auto; }}
     .site-footer {{ margin-top: 40px; padding: 36px 0; background: #fff; border-top: 1px solid var(--line); text-align: center; color: var(--ink-soft); font-size: .88rem; }}
   </style>
 </head>
@@ -263,24 +289,46 @@ def generate_page(title_area, page_path, breadcrumbs, related_links):
         <a class="brand" href="/" aria-label="{SITE_NAME} 홈">❤️ {SITE_NAME} ❤️</a>
         <div style="font-size: .88rem; font-weight: 700; color: var(--ink-soft);">수도권 출장 리프레시 모아보기</div>
       </div>
+      <div class="filter-bar">
+        <div class="select-wrap">
+          <select onchange="if(this.value) location.href=this.value;">
+            <option value="/seoul/" {'selected' if current_city=='seoul' else ''}>서울특별시</option>
+            <option value="/gyeonggi/" {'selected' if current_city=='gyeonggi' else ''}>경기도</option>
+            <option value="/incheon/" {'selected' if current_city=='incheon' else ''}>인천광역시</option>
+          </select>
+        </div>
+        <div class="select-wrap">
+          <select onchange="if(this.value) location.href=this.value;">
+            <option value="/{current_city}/">구/시 선택 전체</option>
+            {"".join([f'<option value="/{current_city}/{urllib.parse.quote(d)}/" {"selected" if d==current_district else ""}>{d}</option>' for d in REGION_DATA[current_city]["districts"].keys()])}
+          </select>
+        </div>
+        <div class="select-wrap">
+          <select onchange="if(this.value) location.href=this.value;" {'disabled' if not current_district else ''}>
+            <option value="/{current_city}/{urllib.parse.quote(current_district)}/">동 선택 전체</option>
+            {"".join([f'<option value="/{current_city}/{urllib.parse.quote(current_district)}/{urllib.parse.quote(dong)}/" {"selected" if dong==current_dong else ""}>{dong}</option>' for dong in REGION_DATA[current_city]["districts"].get(current_district, [])]) if current_district else ""}
+          </select>
+        </div>
+      </div>
     </div>
   </header>
 
   <main class="page-shell">
     <section class="intro">
-      <p style="color: #e6bb72; font-weight: 800; letter-spacing: .08em;">REFRESH THERAPY</p>
+      <p style="color: #e6bb72; font-weight: 800; letter-spacing: .08em;">REFRESH DIRECTORY</p>
       <h1>{title_area} 출장 리프레시 마사지<br>출장 스페셜 테라피</h1>
-      <p class="intro-copy">{title_area} 전 지역 1:1 맞춤 방문 안마와 프라이빗 힐링 코스를 예약하세요.</p>
+      <p class="intro-copy">{title_area} 전 지역에서 프라이빗하고 편안한 방문 안마 케어를 이용하세요.</p>
     </section>
 
+    <!-- 구 / 동 바로가기 네비게이션 칩 -->
     <nav class="nearby-row" aria-label="지역 바로가기">
       {nav_chips}
     </nav>
 
     <section>
       <div style="text-align: center; margin: 24px 0 12px;">
-        <h2 style="margin: 0; font-size: 1.45rem;">{title_area} 제휴 테라피 추천</h2>
-        <p style="margin: 6px 0 0; color: var(--ink-soft); font-size: .9rem;">신속한 조율과 투명한 정찰제 요금으로 안내해 드립니다.</p>
+        <h2 style="margin: 0; font-size: 1.45rem;">{title_area} 추천 테라피</h2>
+        <p style="margin: 6px 0 0; color: var(--ink-soft); font-size: .9rem;">신속한 조율과 정찰제 요금으로 안내해 드립니다.</p>
       </div>
 
       <div class="card-grid">
@@ -289,16 +337,18 @@ def generate_page(title_area, page_path, breadcrumbs, related_links):
     </section>
 
     <section class="region-guide">
-      <h2 style="margin: 0; font-size: 1.4rem;">{title_area} 출장 이용 요금표</h2>
-      <table class="price-table">
-        <thead><tr><th>코스</th><th>60분</th><th>90분</th><th>120분</th></tr></thead>
-        <tbody>
-          <tr><td>타이 리프레시</td><td>80,000원</td><td>100,000원</td><td>120,000원</td></tr>
-          <tr><td>아로마 테라피</td><td>90,000원</td><td>110,000원</td><td>130,000원</td></tr>
-          <tr><td>스페셜 힐링케어</td><td>100,000원</td><td>120,000원</td><td>140,000원</td></tr>
-          <tr><td>VIP 시그니처</td><td>120,000원</td><td>150,000원</td><td>180,000원</td></tr>
-        </tbody>
-      </table>
+      <h2 style="margin: 0; font-size: 1.4rem;">{title_area} 출장 마사지 기준 요금</h2>
+      <div class="price-table-wrap">
+        <table class="price-table">
+          <thead><tr><th>코스</th><th>60분</th><th>90분</th><th>120분</th></tr></thead>
+          <tbody>
+            <tr><td>타이 리프레시</td><td>80,000원</td><td>100,000원</td><td>120,000원</td></tr>
+            <tr><td>아로마 테라피</td><td>90,000원</td><td>110,000원</td><td>130,000원</td></tr>
+            <tr><td>스페셜 힐링케어</td><td>100,000원</td><td>120,000원</td><td>140,000원</td></tr>
+            <tr><td>VIP 시그니처</td><td>120,000원</td><td>150,000원</td><td>180,000원</td></tr>
+          </tbody>
+        </table>
+      </div>
       <p style="margin-top: 12px; font-size: .8rem; color: #8a8da3;">※ 상세 주소 및 심야 시간대 등에 따른 최종 조건은 상담 시 확인하세요.</p>
     </section>
   </main>
@@ -316,58 +366,80 @@ def generate_page(title_area, page_path, breadcrumbs, related_links):
 
 def main():
     sitemap_urls = [SITE_ORIGIN + "/"]
-    
-    # 1. 홈 페이지 생성 (dist/index.html)
     os.makedirs("dist", exist_ok=True)
+
+    # 1. 메인 홈페이지 생성 (강남구, 서초구 등 주요 구로 바로 연결)
     home_links = [
-        {"name": "서울 전체", "path": "/seoul/"},
-        {"name": "경기 전체", "path": "/gyeonggi/"},
-        {"name": "인천 전체", "path": "/incheon/"}
+        {"name": "강남구", "path": f"/seoul/{urllib.parse.quote('강남구')}/"},
+        {"name": "서초구", "path": f"/seoul/{urllib.parse.quote('서초구')}/"},
+        {"name": "송파구", "path": f"/seoul/{urllib.parse.quote('송파구')}/"},
+        {"name": "마포구", "path": f"/seoul/{urllib.parse.quote('마포구')}/"},
+        {"name": "분당구", "path": f"/gyeonggi/{urllib.parse.quote('성남시 분당구')}/"},
+        {"name": "수원 영통", "path": f"/gyeonggi/{urllib.parse.quote('수원시 영통구')}/"},
+        {"name": "인천 부평", "path": f"/incheon/{urllib.parse.quote('부평구')}/"},
+        {"name": "인천 송도", "path": f"/incheon/{urllib.parse.quote('연수구')}/"}
     ]
     home_bc = [{"name": "홈", "path": "/"}]
     with open("dist/index.html", "w", encoding="utf-8") as f:
-        f.write(generate_page("수도권", "/", home_bc, home_links))
-    print("✓ 홈(index.html) 생성 완료")
+        f.write(generate_page("수도권", "/", home_bc, home_links, current_city="seoul"))
+    print("✓ 메인 페이지(dist/index.html) 생성 완료")
 
-    # 2. 시·도 / 시·구·군 / 동 페이지 일괄 생성
+    # 2. 시·도, 구, 동 실제 물리 폴더 및 index.html 생성
     for city_key, city_info in REGION_DATA.items():
         city_path = f"/{city_key}/"
         sitemap_urls.append(SITE_ORIGIN + city_path)
         city_dir = os.path.join("dist", city_key)
         os.makedirs(city_dir, exist_ok=True)
-        
-        # 시/도 페이지
-        dist_links = [{"name": d, "path": f"/{city_key}/{d}/"} for d in list(city_info["districts"].keys())[:10]]
+
+        # 시/도 페이지 내 구 칩 링크
+        dist_links = [{"name": d, "path": f"/{city_key}/{urllib.parse.quote(d)}/"} for d in list(city_info["districts"].keys())[:12]]
         city_bc = [{"name": "홈", "path": "/"}, {"name": city_info["short"], "path": city_path}]
         with open(os.path.join(city_dir, "index.html"), "w", encoding="utf-8") as f:
-            f.write(generate_page(city_info["name"], city_path, city_bc, dist_links))
+            f.write(generate_page(city_info["name"], city_path, city_bc, dist_links, current_city=city_key))
 
-        # 시/구/군 & 동 페이지
+        # 시/구/군 및 동 단위 페이지 생성
         for district_name, dongs in city_info["districts"].items():
-            dist_path = f"/{city_key}/{district_name}/"
-            sitemap_urls.append(SITE_ORIGIN + urllib.parse.quote(dist_path))
+            encoded_dist = urllib.parse.quote(district_name)
+            dist_path = f"/{city_key}/{encoded_dist}/"
+            sitemap_urls.append(SITE_ORIGIN + dist_path)
+
             dist_dir = os.path.join(city_dir, district_name)
             os.makedirs(dist_dir, exist_ok=True)
 
-            dong_links = [{"name": d, "path": f"/{city_key}/{district_name}/{d}/"} for d in dongs]
+            # 구 페이지에서는 해당 구 소속 동 링크들이 나열됨
+            dong_links = [{"name": d, "path": f"/{city_key}/{encoded_dist}/{urllib.parse.quote(d)}/"} for d in dongs]
             dist_bc = city_bc + [{"name": district_name, "path": dist_path}]
 
-            # 구 페이지 생성
+            # 구 index.html 생성
             with open(os.path.join(dist_dir, "index.html"), "w", encoding="utf-8") as f:
-                f.write(generate_page(f"{city_info['short']} {district_name}", dist_path, dist_bc, dong_links))
+                f.write(generate_page(f"{city_info['short']} {district_name}", dist_path, dist_bc, dong_links, current_city=city_key, current_district=district_name))
 
-            # 동 페이지 생성
+            # 각 동 index.html 생성 (클릭 시 이동하는 실제 정적 파일)
             for dong_name in dongs:
-                dong_path = f"/{city_key}/{district_name}/{dong_name}/"
-                sitemap_urls.append(SITE_ORIGIN + urllib.parse.quote(dong_path))
+                encoded_dong = urllib.parse.quote(dong_name)
+                dong_path = f"/{city_key}/{encoded_dist}/{encoded_dong}/"
+                sitemap_urls.append(SITE_ORIGIN + dong_path)
+
                 dong_dir = os.path.join(dist_dir, dong_name)
                 os.makedirs(dong_dir, exist_ok=True)
 
                 dong_bc = dist_bc + [{"name": dong_name, "path": dong_path}]
-                sibling_dongs = [{"name": d, "path": f"/{city_key}/{district_name}/{d}/", "active": (d == dong_name)} for d in dongs]
+                sibling_dongs = [
+                    {"name": d, "path": f"/{city_key}/{encoded_dist}/{urllib.parse.quote(d)}/", "active": (d == dong_name)}
+                    for d in dongs
+                ]
 
+                # 동 index.html 생성
                 with open(os.path.join(dong_dir, "index.html"), "w", encoding="utf-8") as f:
-                    f.write(generate_page(f"{city_info['short']} {district_name} {dong_name}", dong_path, dong_bc, sibling_dongs))
+                    f.write(generate_page(
+                        f"{city_info['short']} {district_name} {dong_name}",
+                        dong_path,
+                        dong_bc,
+                        sibling_dongs,
+                        current_city=city_key,
+                        current_district=district_name,
+                        current_dong=dong_name
+                    ))
 
     # 3. sitemap.xml 생성
     sitemap_content = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -384,6 +456,11 @@ def main():
     with open("dist/robots.txt", "w", encoding="utf-8") as f:
         f.write(f"User-agent: *\nAllow: /\nSitemap: {SITE_ORIGIN}/sitemap.xml\n")
     print("✓ _redirects 및 robots.txt 생성 완료")
+
+    # 5. assets 자동 복사
+    if os.path.exists("assets"):
+        shutil.copytree("assets", "dist/assets", dirs_exist_ok=True)
+        print("✓ assets 폴더 dist/assets로 복사 완료")
 
 if __name__ == "__main__":
     main()
