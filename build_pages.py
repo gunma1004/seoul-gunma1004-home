@@ -4,9 +4,11 @@ import hashlib
 import json
 import shutil
 
+# 1. 사이트 기본 설정
 SITE_ORIGIN = "https://seoul-gunma1004-home.netlify.app"
 SITE_NAME = "건마1004"
 
+# 2. 지정 제휴업체 6곳 및 연락처
 PARTNER_SHOPS = [
     {"name": "퀸즈홈테라피", "phone": "0507-1280-3296", "category": "리프레시 홈타이", "price": "타이 60분 80,000원", "img": "01"},
     {"name": "한국미인테라피", "phone": "0507-1280-3140", "category": "스페셜 테라피", "price": "아로마 90분 110,000원", "img": "02"},
@@ -16,6 +18,7 @@ PARTNER_SHOPS = [
     {"name": "미인클럽테라피", "phone": "0507-1280-3180", "category": "VIP 스페셜", "price": "힐링 60분 100,000원", "img": "06"}
 ]
 
+# 3. 서울·경기·인천 시구동 데이터셋
 REGION_DATA = {
     "seoul": {
         "name": "서울특별시", "short": "서울",
@@ -371,7 +374,7 @@ def main():
     sitemap_urls = [SITE_ORIGIN + "/"]
     os.makedirs("dist", exist_ok=True)
 
-    # 1. 메인 홈페이지 생성 (실제 존재하는 구/동 링크로 연결)
+    # 1. 메인 홈페이지 생성 (서울 대표 구로 바로가기 칩 연결)
     home_links = [
         {"name": "강남구", "path": f"/seoul/{urllib.parse.quote('강남구')}/"},
         {"name": "서초구", "path": f"/seoul/{urllib.parse.quote('서초구')}/"},
@@ -387,7 +390,7 @@ def main():
         f.write(generate_page("수도권", "/", home_bc, home_links, current_city="seoul"))
     print("✓ 메인 페이지(dist/index.html) 생성 완료")
 
-    # 2. 시·도, 구, 동 폴더 및 각각의 index.html 물리 파일 생성
+    # 2. 시·도, 구, 동 물리 폴더 및 개별 index.html 파일 생성
     for city_key, city_info in REGION_DATA.items():
         city_path = f"/{city_key}/"
         sitemap_urls.append(SITE_ORIGIN + city_path)
@@ -410,11 +413,11 @@ def main():
             dong_links = [{"name": d, "path": f"/{city_key}/{encoded_dist}/{urllib.parse.quote(d)}/"} for d in dongs]
             dist_bc = city_bc + [{"name": district_name, "path": dist_path}]
 
-            # 구 index.html
+            # 구 index.html 생성
             with open(os.path.join(dist_dir, "index.html"), "w", encoding="utf-8") as f:
                 f.write(generate_page(f"{city_info['short']} {district_name}", dist_path, dist_bc, dong_links, current_city=city_key, current_district=district_name))
 
-            # 동 index.html
+            # 동 index.html 생성
             for dong_name in dongs:
                 encoded_dong = urllib.parse.quote(dong_name)
                 dong_path = f"/{city_key}/{encoded_dist}/{encoded_dong}/"
@@ -449,18 +452,18 @@ def main():
         f.write(sitemap_content)
     print(f"✓ sitemap.xml 생성 완료 (총 {len(sitemap_urls)}개 URL)")
 
-    # 4. _redirects 파일 처리 (충돌 방지를 위해 기존 SPA rewrite 제거)
+    # 4. _redirects 파일 완전 삭제 (SPA 리다이렉트로 인한 404 원천 차단)
     redirects_file = os.path.join("dist", "_redirects")
     if os.path.exists(redirects_file):
         os.remove(redirects_file)
-    print("✓ _redirects 충돌 규칙 제거 완료")
+        print("✓ _redirects 충돌 파일 삭제 완료")
 
     # 5. robots.txt 생성
     with open("dist/robots.txt", "w", encoding="utf-8") as f:
         f.write(f"User-agent: *\nAllow: /\nSitemap: {SITE_ORIGIN}/sitemap.xml\n")
     print("✓ robots.txt 생성 완료")
 
-    # 6. assets 자동 복사
+    # 6. assets 복사
     if os.path.exists("assets"):
         shutil.copytree("assets", "dist/assets", dirs_exist_ok=True)
         print("✓ assets 폴더 복사 완료")
