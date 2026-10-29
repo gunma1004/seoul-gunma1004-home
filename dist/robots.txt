@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://seoul-gunma1004-home.netlify.app/sitemap.xml
